@@ -1,6 +1,7 @@
 # ComfyUI ROCm Docker
 A persistent Docker setup for ComfyUI with ROCm (AMD GPU) support, including a small test model for immediate use. Tested on the Minisforum N5 Pro and should also work on similar AMD-based systems such as the AI X1 Pro.
-![VHS CLI Recording](./readme-assets/screenshot-comfyui-rocm-n5pro.png)
+
+![ComfyUI Screenshot](./readme-assets/screenshot-comfyui-rocm-n5pro.png)
 
 This repository includes:
 - `Dockerfile` - builds a ROCm-enabled ComfyUI image with Python dependencies and a small test SD model.
