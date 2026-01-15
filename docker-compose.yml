@@ -1,0 +1,55 @@
+# -----------------------------------------------------------------------------
+# Docker Compose for ComfyUI ROCm container
+# -----------------------------------------------------------------------------
+version: "3.9"
+
+services:
+  comfyui:
+    container_name: comfyui
+
+    # GPU devices for ROCm / AMD GPUs
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+
+    # Environment variables
+    environment:
+      MODEL_DOWNLOAD: none
+
+    # Grant access to video group for AMD device files
+    group_add:
+      - video
+
+    # Healthcheck to ensure the web UI is responding
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:8188/
+
+    # Docker image (built locally)
+    image: comfyui-rocm-n5pro
+
+    # Port mapping
+    ports:
+      - '8188:8188'
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Shared memory (helps with large models)
+    shm_size: 16g
+
+    # Bind mounts for persistence
+    # If using TrueNAS create an App dataset for the bind mounts
+    # and set absolute paths instead of the relative ones below,
+    # i.e., /mnt/Storage/apps/comfyui
+    volumes:
+      - ./models:/workspace/ComfyUI/models
+      - ./output:/workspace/ComfyUI/output
+      - ./input:/workspace/ComfyUI/input
+      - ./custom_nodes:/workspace/ComfyUI/custom_nodes
