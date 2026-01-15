@@ -5,6 +5,7 @@ This repository includes:
 - `Dockerfile` - builds a ROCm-enabled ComfyUI image with Python dependencies and a small test SD model.
 - `docker-compose.yml` - aimplifies container startup with GPU access, bind mounts, and healthchecks.
 
+
 ## Features
 - Runs ComfyUI on AMD GPUs using ROCm
 - Includes a persistent directory structure for models, outputs, inputs, and custom nodes
@@ -13,11 +14,13 @@ This repository includes:
 - Healthcheck ensures the UI is responding
 - Compatible with Minisforum N5 Pro, AI X1 Pro, and other ROCm-enabled AMD systems
 
+
 ## Requirements
 - Docker >= 24.x
 - Docker Compose >= 2.12.x
 - AMD GPU with ROCm drivers installed on host
 - Linux host (Ubuntu-based or TrueNAS SCALE recommended)
+
 
 ## Setup
 ### Build Docker Image
@@ -66,11 +69,13 @@ http://<host-ip>:8188
 ### Health Checks
 The container is configured with a healthcheck that verifies the ComfyUI Web UI is responding every 30 seconds. If it fails 3 times in a row, Docker will mark the container as unhealthy.
 
+
 ## Notes & Caveats
 - Tested and confirmed working on Minisforum N5 Pro; likely compatible with AI X1 Pro or other AMD ROCm setups.
 - A small test SD 1.5 model is downloaded by default. Add larger models as needed.
 - ROCm runtime does not need to be specified in Compose; devices are exposed directly via `/dev/kfd` and `/dev/dri`.
 - Shared memory (`shm_size`) is set to 16GB to improve performance on large models.
+
 
 ## Acknowledgements
 This project was made possible by [Minisforum](https://minisforum.com), who sent over an N5 Pro demo in summer 2025. At first, the system sat on the shelf - a few trade-offs and rough edges kept it there longer than expected.
@@ -78,6 +83,7 @@ This project was made possible by [Minisforum](https://minisforum.com), who sent
 With time, updates, and a fresh approach - running TrueNAS on bare metal - the N5 Pro revealed its potential as a compact AI powerhouse. GPU support now shines, and the system can really stretch its legs.
 
 While the N5 Pro might not have hit every milestone its creators hoped for, it’s a testament to Minisforum’s willingness to experiment. Their boldness gives users the chance to explore, push boundaries, and find new ways to work with technology.
+
 
 ## License
 This repository is released under the MIT License.
