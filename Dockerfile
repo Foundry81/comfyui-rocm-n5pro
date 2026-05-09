@@ -31,7 +31,7 @@ RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip gitpython requests
 # -----------------------------------------------------------------------------
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git \
     && cd ComfyUI \
-    && git checkout v0.9.1
+    && git checkout v0.20.1
 
 WORKDIR /workspace/ComfyUI
 
