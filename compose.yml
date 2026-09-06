@@ -1,0 +1,46 @@
+services:
+  comfyui:
+    container_name: comfyui
+
+    image: comfy-rocm10:0.1
+
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+
+    environment:
+      HIP_VISIBLE_DEVICES: '0'
+      HSA_ENABLE_SDMA: '0'
+      MODEL_DOWNLOAD: none
+      ROC_ENABLE_PRE_VEGA: '0'
+
+    group_add:
+      - video
+
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:8188/
+      timeout: 10s
+
+    ports:
+      - '8188:8188'
+
+    restart: unless-stopped
+
+    security_opt:
+      - seccomp:unconfined
+
+    shm_size: 16g
+
+    volumes:
+      - /mnt/Storage/apps/comfyui/user:/workspace/ComfyUI/user
+      - /mnt/Storage/apps/comfyui/models:/workspace/ComfyUI/models
+      - /mnt/Storage/apps/comfyui/output:/workspace/ComfyUI/output
+      - /mnt/Storage/apps/comfyui/input:/workspace/ComfyUI/input
+      - /mnt/Storage/apps/comfyui/custom_nodes:/workspace/ComfyUI/custom_nodes

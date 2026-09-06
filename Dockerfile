@@ -1,18 +1,18 @@
 # -----------------------------------------------------------------------------
-# ROCm ComfyUI Dockerfile - persistent image with test model
+# ComfyUI + ROCm 10.0 + PyTorch 2.13
+# Target: AMD Ryzen AI 9 HX PRO 370 / gfx1151
 # Tested on: Minisforum N5 Pro, compatible with AI X1 Pro and similar AMD setups
 # Purpose: Run ComfyUI with ROCm support and persistent model directories
 # -----------------------------------------------------------------------------
 
-# Base ROCm PyTorch image
-FROM rocm/pytorch:rocm7.2.1_ubuntu24.04_py3.12_pytorch_release_2.9.1
+FROM rocm/pytorch:rocm10.0_ubuntu24.04_py3.13_pytorch_release_2.13.0
 
-# Set working directory inside container
 WORKDIR /workspace
 
 # -----------------------------------------------------------------------------
 # System dependencies
 # -----------------------------------------------------------------------------
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         ca-certificates \
@@ -24,21 +24,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # -----------------------------------------------------------------------------
 # Python dependencies
 # -----------------------------------------------------------------------------
-RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip gitpython requests
+
+RUN /opt/venv/bin/pip install --no-cache-dir --upgrade \
+        pip \
+        gitpython \
+        requests
 
 # -----------------------------------------------------------------------------
-# Clone ComfyUI repository
+# uv
 # -----------------------------------------------------------------------------
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# ------------------------------------------------------------
+# Clone ComfyUI Repository
+#
+# Intentionally uses the current main branch.
+# Pin a known-good release after establishing the ROCm 10 baseline if you want.
+# ------------------------------------------------------------
+
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git \
-    && cd ComfyUI \
-    && git checkout v0.20.1
+    /workspace/ComfyUI
 
 WORKDIR /workspace/ComfyUI
 
 # -----------------------------------------------------------------------------
 # Create required directories for models, outputs, and custom nodes
+# These are also mounted from the host by Compose.
 # -----------------------------------------------------------------------------
-RUN mkdir -p models/checkpoints \
+
+RUN mkdir -p \
+    models/checkpoints \
     models/vae \
     models/loras \
     models/embeddings \
@@ -51,42 +67,46 @@ RUN mkdir -p models/checkpoints \
 # -----------------------------------------------------------------------------
 # Install ComfyUI Python dependencies
 # -----------------------------------------------------------------------------
-RUN /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# -----------------------------------------------------------------------------
-# Download a small test SD model (Stable Diffusion 1.5)
-# -----------------------------------------------------------------------------
-RUN python - <<'EOF'
-import os, requests
+RUN /opt/venv/bin/pip install --no-cache-dir \
+    -r requirements.txt
 
-model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
-dest = "/workspace/ComfyUI/models/checkpoints/v1-5-pruned-emaonly.safetensors"
-
-os.makedirs(os.path.dirname(dest), exist_ok=True)
-
-r = requests.get(model_url, stream=True)
-with open(dest, "wb") as f:
-    for chunk in r.iter_content(chunk_size=8192):
-        f.write(chunk)
-EOF
+RUN if [ -f manager_requirements.txt ]; then \
+        /opt/venv/bin/pip install --no-cache-dir \
+        -r manager_requirements.txt; \
+    fi
 
 # -----------------------------------------------------------------------------
 # Environment variables
 # -----------------------------------------------------------------------------
+
 ENV MODEL_DOWNLOAD=none
 
 # -----------------------------------------------------------------------------
 # Expose ComfyUI port
 # -----------------------------------------------------------------------------
+
 EXPOSE 8188
 
 # -----------------------------------------------------------------------------
 # Healthcheck to verify the web UI is responding
 # -----------------------------------------------------------------------------
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+
+HEALTHCHECK \
+    --interval=30s \
+    --timeout=10s \
+    --start-period=30s \
+    --retries=3 \
     CMD curl -f http://localhost:8188/ || exit 1
 
 # -----------------------------------------------------------------------------
 # Start ComfyUI
 # -----------------------------------------------------------------------------
-CMD ["/opt/venv/bin/python", "main.py", "--listen", "0.0.0.0", "--port", "8188"]
+
+CMD ["/opt/venv/bin/python", "main.py", \
+     "--listen", "0.0.0.0", \
+     "--port", "8188", \
+     "--enable-manager", \
+     "--gpu-only", \
+     "--force-fp16"]
+	 
