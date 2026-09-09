@@ -21,7 +21,7 @@ Primary test platform:
 | Host kernel       | Linux 6.12.x                |
 | Container runtime | Docker / Docker Compose     |
 
-The Radeon 890M is an integrated GPU, so the memory reported by ROCm is shared system memory rather than dedicated VRAM.
+The Radeon 890M is an integrated GPU, so the memory reported by ROCm is shared system memory rather than dedicated VRAM.     
 
 ## Software Stack
 
@@ -135,15 +135,15 @@ Models, generated images, inputs, custom nodes, and ComfyUI user configuration a
 
 The default configuration uses:
 
-| Host Directory                           | Container Directory               | Purpose                                |
-| ---------------------------------------- | --------------------------------- | -------------------------------------- |
-| `/mnt/Storage/apps/comfyui/models`       | `/workspace/ComfyUI/models`       | Models, checkpoints, VAEs, LoRAs, etc. |
-| `/mnt/Storage/apps/comfyui/output`       | `/workspace/ComfyUI/output`       | Generated images                       |
-| `/mnt/Storage/apps/comfyui/input`        | `/workspace/ComfyUI/input`        | Input files                            |
-| `/mnt/Storage/apps/comfyui/custom_nodes` | `/workspace/ComfyUI/custom_nodes` | Custom node extensions                 |
-| `/mnt/Storage/apps/comfyui/user`         | `/workspace/ComfyUI/user`         | ComfyUI user configuration             |
+| Host Directory                           | Container Directory               | Purpose                                |    
+| ---------------------------------------- | --------------------------------- | -------------------------------------- |    
+| `/mnt/Storage/apps/comfyui/models`       | `/workspace/ComfyUI/models`       | Models, checkpoints, VAEs, LoRAs, etc. |    
+| `/mnt/Storage/apps/comfyui/output`       | `/workspace/ComfyUI/output`       | Generated images                       |    
+| `/mnt/Storage/apps/comfyui/input`        | `/workspace/ComfyUI/input`        | Input files                            |    
+| `/mnt/Storage/apps/comfyui/custom_nodes` | `/workspace/ComfyUI/custom_nodes` | Custom node extensions                 |    
+| `/mnt/Storage/apps/comfyui/user`         | `/workspace/ComfyUI/user`         | ComfyUI user configuration             |    
 
-Because these directories are bind-mounted, rebuilding or replacing the Docker image does not remove models or user data.
+Because these directories are bind-mounted, rebuilding or replacing the Docker image does not remove models or user data.    
 
 ## Memory and Performance
 
@@ -200,7 +200,7 @@ print('GPU memory:', torch.cuda.memory_allocated() / 1024**2, 'MB')
 "
 ```
 
-A successful result confirms that the basic CPU-to-GPU memory path is functional before troubleshooting ComfyUI itself.
+A successful result confirms that the basic CPU-to-GPU memory path is functional before troubleshooting ComfyUI itself.      
 
 ## ROCm 7.x Legacy Configuration
 
@@ -212,9 +212,9 @@ The `main` branch is now the ROCm 10 implementation.
 
 ## Why This Repository Exists
 
-This project started as an experiment to get ComfyUI running efficiently on the N5 Pro's integrated Radeon 890M GPU. The system is an unusual target for containerized AI workloads: unlike a conventional discrete GPU, the 890M uses shared system memory. The goal is therefore not to present this as a universal AMD GPU configuration, but to document a working, reproducible setup for this particular class of AMD APU.
+This project started as an experiment to get ComfyUI running efficiently on the N5 Pro's integrated Radeon 890M GPU. The system is an unusual target for containerized AI workloads: unlike a conventional discrete GPU, the 890M uses shared system memor     ry. The goal is therefore not to present this as a universal AMD GPU configuration, but to document a working, reproducible se     etup for this particular class of AMD APU.
 
-The configuration deliberately keeps the ROCm/PyTorch runtime inside the container while exposing only the required GPU device interfaces from the TrueNAS host. That makes it possible to update the AI software stack independently from the host operating system while retaining persistent models and ComfyUI configuration.
+The configuration deliberately keeps the ROCm/PyTorch runtime inside the container while exposing only the required GPU device interfaces from the TrueNAS host. That makes it possible to update the AI software stack independently from the host operat     ting system while retaining persistent models and ComfyUI configuration.
 
 ## Troubleshooting
 
@@ -271,12 +271,42 @@ docker compose up -d
 
 Persistent models, outputs, inputs, custom nodes, and user configuration remain in the host bind mounts.
 
+## Optional: Increase AMD GTT Memory
+
+APUs such as the Ryzen AI 9 HX PRO 370 do not have conventional dedicated VRAM. ROCm uses shared system memory through the GPU's GTT/TTM infrastructure.
+
+On a 60 GiB system, the default TTM limit observed with TrueNAS 25.10 was approximately 30.2 GiB. This can be increased by setting the Linux kernel parameter `ttm.pages_limit`.
+
+This repository includes an optional script to increase the limit to 48 GiB:
+
+```bash
+./scripts/set-ttm-48gb.sh
+```
+
+A reboot is required.
+
+This is an advanced configuration. Increasing the GPU's available GTT memory reduces the amount of system RAM available to TrueNAS, ZFS, containers, and other applications. Do not use this setting blindly on systems with limited RAM.
+
+To restore the default configuration:
+
+```bash
+./scripts/restore-ttm-default.sh
+```
+
+After rebooting, verify the configuration with:
+
+```bash
+cat /sys/module/ttm/parameters/pages_limit
+cat /sys/class/drm/card0/device/mem_info_gtt_total
+```
+
 ## Acknowledgements
 
-This project was made possible by [Minisforum](http://minisforum.com), who provided an N5 Pro demo system in summer 2025.
+This project was made possible by [Minisforum](http://minisforum.com), who provided an N5 Pro demo system in summer 2025.    
 
-The N5 Pro initially spent considerably more time sitting on a shelf than generating images. Improvements in the software stack, ROCm support, and a bare-metal TrueNAS configuration eventually turned it into a surprisingly capable compact AI workstation.
+The N5 Pro initially spent considerably more time sitting on a shelf than generating images. Improvements in the software stack, ROCm support, and a bare-metal TrueNAS configuration eventually turned it into a surprisingly capable compact AI workstat     tion.
 
 ## License
 
 This project is released under the MIT License.
+
